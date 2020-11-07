@@ -14,24 +14,128 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Data retrieval
 
-```{r cars}
-summary(cars)
+```{r caret}
+library(caret)
+library(ggplot2)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+We load the training data:
+```{r data1}
+dataDLA <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Now we explore the data:
 
-Ok.
+```{r data2}
+dim(dataDLA)
+```
+
+We have 19622 instances with 160 attributes. We want to predict "classe". Let's see how many levels there are:
+```{r data3}
+levels(dataDLA$classe)
+```
+
+```{r data2}
+head(dataDLA)
+```
+
+We observe NA values. Let's found out the number of NAs in each column:
+
+```{r data3}
+colSums(is.na(dataDLA))
+```
+
+```{r dataempty}
+colSums(dataDLA == "")
+```
+
+Observe that from the 19622 instances, we have 19216 instances with NA atttributes such as max_roll_belt. Also, there are empty cells. We drop them out:
+
+```{r dataNA}
+dataDLA2 <- dataDLA[colSums(!is.na(dataDLA)) == 19622]
+dataDLA2 <- dataDLA2[, colSums(dataDLA2 != "") == 19622 ]
+print(head(dataDLA2))
+print(dim(dataDLA2))
+```
+
+We now have 60 attributes. Observe that the first 6 columns are attributes that are not informative for predictive purposes.
+
+```{r dataV3}
+training <- dataDLA2[, 8:60]
+```
+
+## Data exploration
+
+Let's explore some features to see if we can distinguish relevant attributes.
+
+```{r plot1}
+qplot(roll_belt,pitch_belt,data=training,colour=classe)
+```
+
+```{r plot2}
+qplot(gyros_belt_x,gyros_belt_y,data=training,colour=classe)
+```
+
+```{r plot3}
+qplot(accel_belt_x,accel_belt_y,data=training,colour=classe)
+```
+
+```{r plot1}
+qplot(roll_dumbbell,pitch_dumbbell,data=training,colour=classe)
+```
+
+Plots show that classe "E" are predominant, and that in general the classes are not easily separated for the chosed attributes. We may not expect high accuracy in predicting the class. 
+
+## Fitting models
+
+
+```{r control}
+set.seed(2020)
+fitControl <- trainControl(method = "cv", number = 10)
+model_lda <- train(classe ~ ., data = training, 
+                 method = "lda", 
+                 trControl = fitControl)
+model_lda
+```
+
+```{r control2}
+model_rf <- train(classe ~ ., data = training, 
+                 method = "rf", 
+                 trControl = fitControl)
+model_rf
+```
+
+We get 70.24% mean accuracy with LDA and 99.36% mean accuracy with RF with 10-fold cross-validation. We may expect over-fitting with RF.
+
+
+## Testing models
+
+We load the  testing data:
+```{r datatest}
+library(dplyr)
+dataDLA_test <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"))
+
+columns <- colnames(training)
+columns <- columns[-53]
+testing <- select(dataDLA_test, columns)
+```
+
+```{r predict}
+pred_lda <- predict(model_lda, testing)
+pred_lda
+```
+
+```{r predict2}
+pred_rf <- predict(model_rf, testing)
+pred_rf
+```
+
+```{r predict3}
+postResample(pred_lda, pred_rf)
+```
+
+(Data retrieved from: <http://groupware.les.inf.puc-rio.br/har#dataset>.)
