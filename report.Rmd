@@ -35,11 +35,11 @@ dim(dataDLA)
 ```
 
 We have 19622 instances with 160 attributes. We want to predict "classe". Let's see how many levels there are:
-```{r data3}
+```{r data33}
 levels(dataDLA$classe)
 ```
 
-```{r data2}
+```{r data22}
 head(dataDLA)
 ```
 
@@ -84,7 +84,7 @@ qplot(gyros_belt_x,gyros_belt_y,data=training,colour=classe)
 qplot(accel_belt_x,accel_belt_y,data=training,colour=classe)
 ```
 
-```{r plot1}
+```{r plot11}
 qplot(roll_dumbbell,pitch_dumbbell,data=training,colour=classe)
 ```
 
